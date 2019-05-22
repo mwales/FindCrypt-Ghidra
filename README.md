@@ -1,3 +1,8 @@
+# What is different about my fork
+
+* Removed autoupdate features.
+* Changed some of the installation paths
+
 # FindCrypt - Ghidra Edition
 
 While for years we used IDA Pro and its incredible plugins developed by its huge community, Ghidra came out recently (at the time of writing) showing a lot of potential and an incredible modular design for customization both in Python or Java.
@@ -14,17 +19,12 @@ I'm trying to move to Ghidra and the very first thing I noticed is how important
 
 #### Windows
 
-1. Find your Ghidra installation directory (e.g. "E:\Reversing Softwares\ghidra_9.0")
-2. Move "FindCrypt.java" into "Ghidra\Features\BytePatterns\ghidra_scripts"
-3. Move "findcrypt_ghidra" (database directory) into "C:\Users\your user\"
-4. Be sure Ghidra can access the "findcrypt_ghidra" directory both for reading and writing.
+Windows?  Blech...
 
 #### Linux
 
 1. Find your Ghidra installation directory (e.g. ~/ghidra)
-2. Move "FindCrypt.java" into "~/ghidra/Features/BytePatterns/ghidra_scripts"
-3. Move "findcrypt_ghidra" (database directory) into ~/ (or $HOME)
-4. Be sure Ghidra can access the "~/findcrypt_ghidra" directory both for reading and writing.
+2. Move "FindCrypt.java" and database.dv3 into "~/ghidra_scripts/"
 
 ## Usage
 
@@ -60,24 +60,11 @@ To include more constants of your choice, simply refer to the "FCExporter" proje
 
 #### Database Updating
 
-The script is now using an internal auto update system synchronized with the latest database version in this repository.
-The centralized repository synchronization is by default turned on, this is to ensure the user always has the latest version possible
-and therefore obtain best results from the script, if you wish to turn it off:
-
-1. Open the "FindCrypt.java" file and find the '__FORCE_NO_DBUPDATE' variable (line 705).
-2. Replace "false" with "true".
+git pull
 
 #### Script Updating
 
-While the database is by design modular and can be updated automatically, the script can not; but the script will check the current version and prompt the user to check this repository latest version for download, with the list of changes from the new version.
-
-The script update message is prompt only once per session.
-
-Proceed to download the latest version of "FindCrypt.java" and replace it in Ghidra's script directory.
-
-Also this feature is turned on by default, if you wish to disable it, follow above mentioned steps on '__FORCE_NO_SCRIPTUPDATE' (line 707).
-
-![Example update](https://github.com/d3v1l401/FindCrypt-Ghidra/blob/master/Misc/updDemo.png)
+Nope...
 
 # Credits
 d3vil401 - d3vil401@protonmail.com, d3vil401#7685 (Discord), https://d3vsite.org/

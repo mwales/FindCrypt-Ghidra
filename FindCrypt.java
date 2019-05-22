@@ -1,3 +1,7 @@
+// Finds Crypto constants in a binary
+//@category Crypto
+
+
 /*
 		GNU GENERAL PUBLIC LICENSE
 	                       Version 3, 29 June 2007
@@ -703,105 +707,12 @@ import ghidra.program.model.address.Address;
 import ghidra.util.Msg;
 
 public class FindCrypt extends GhidraScript {
-	public static class InternalParams {
-		// Disable automatic database update.
-		public static final boolean __FORCE_NO_DBUPDATE = false;
-		// Disable automatic script version check.
-		public static final boolean __FORCE_NO_SCRIPTUPDATE = false;
-		
-		// Current script version, used for enforcing; modifications not recommended unless you know what you're doing.
-		public static final String __SCRIPT_VERSION = "4";
-	}
 
 	public static class GuiHandler {
 		
 		public static void ShowMessage(String _title, String _message, String _details, int _icon) {
 			MultiLineMessageDialog.showMessageDialog(null, _title, _message, _details, _icon);
 		}
-	}
-
-	public static class UpdateManager {
-		private String _BASE = "";
-		private String _LOCAL = "";
-		
-		public String GetChangelog() {
-			URL url;
-			try {
-				url = new URL(this._BASE + "/last_chlog.txt");
-				URLConnection urlConnection = url.openConnection();
-				InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-
-				var _lastchLog = new String(in.readAllBytes(), "UTF-8");
-				
-				return _lastchLog;
-			} catch (Exception e) { 
-				return "Error recovering last changelog:\n" + e.getMessage();
-			}
-		}
-		
-		public boolean CheckScriptVersion() {
-			URL url;
-			try {
-				url = new URL(this._BASE + "/script_update.txt");
-				URLConnection urlConnection = url.openConnection();
-				InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-
-				var _last = Integer.parseInt(new String(in.readAllBytes(), "UTF-8"));
-				var _local = Integer.parseInt(InternalParams.__SCRIPT_VERSION);
-				
-				if (_last > _local) {
-					MultiLineMessageDialog.showMessageDialog(null, "FindCrypt Ghidra",
-							"A new version of FindCrypt-Ghidra is available:", this.GetChangelog() + "\n\n\thttps://github.com/d3v1l401/FindCrypt-Ghidra", 1);
-				}
-				
-				return true;
-			} catch (Exception e) {
-				// Don't bother, internet may not be available.
-			}
-			return false;
-		}
-		
-		public boolean CheckDatabaseVersion() {
-			URL url;
-			try {
-				url = new URL(this._BASE + "/last_update.txt");
-				URLConnection urlConnection = url.openConnection();
-				InputStream in = new BufferedInputStream(urlConnection.getInputStream());
-
-				var _last = Integer.parseInt(new String(in.readAllBytes(), "UTF-8"));
-				var _local = Integer.parseInt(new String(new FileInputStream(this._LOCAL + "last_update.txt").readAllBytes(), "UTF-8"));
-				
-				if (_last > _local) {
-					System.out.println("A new version of the database is being downloaded (" + _local + " -> " + _last + ").");
-					
-					url = new URL(this._BASE + "/database.d3v");
-					ReadableByteChannel readableByteChannel = Channels.newChannel(url.openStream());
-
-					new File(this._LOCAL + "database.d3v").delete();
-					FileOutputStream fileOutputStream = new FileOutputStream(this._LOCAL + "database.d3v");
-					FileChannel fileChannel = fileOutputStream.getChannel();
-					fileOutputStream.getChannel().transferFrom(readableByteChannel, 0, Long.MAX_VALUE);
-					fileOutputStream.close();
-					
-					new File(this._LOCAL + "last_update.txt").delete();
-					var _handle = new FileWriter(this._LOCAL + "last_update.txt");
-					_handle.write(String.valueOf(_last));
-					_handle.close();
-				}
-				
-				return true;
-			} catch (Exception e) {
-				// Don't bother, internet may not be available.
-			}
-			return false;
-		}
-		
-		public UpdateManager(String _baseUrl, String _basePath) {
-			this._BASE = _baseUrl;
-			this._LOCAL = _basePath;
-		}
-		
-		
 	}
 
 	public static class DatabaseManager {
@@ -900,20 +811,15 @@ public class FindCrypt extends GhidraScript {
 	}
 
 	public static class WorksetManager {
-		private static final String __FCUPD_BASEURL = "https://raw.githubusercontent.com/d3v1l401/FindCrypt-Ghidra/master/findcrypt_ghidra";
 		
-		private static final String __FCDATA_DIR = System.getProperty("user.home") + File.separator + "findcrypt_ghidra" + File.separator;
+		private static final String __FCDATA_DIR = System.getProperty("user.home") + File.separator + "ghidra_scripts" + File.separator;
 		
 		private static DatabaseManager _dbHandler;
-		private static UpdateManager   _updHandler;
 		
 		public static boolean Initialize() {
 			_dbHandler = new DatabaseManager(__FCDATA_DIR + "database.d3v");
-			_updHandler = new UpdateManager(__FCUPD_BASEURL, __FCDATA_DIR);
 			
-			if (_dbHandler != null && _updHandler != null) {
-				_updHandler.CheckDatabaseVersion();
-				_updHandler.CheckScriptVersion();
+			if (_dbHandler != null ) {
 				return true;
 			}
 			
