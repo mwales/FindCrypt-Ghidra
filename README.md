@@ -1,6 +1,8 @@
 # What is different about my fork
 
 * Removed autoupdate features.
+* Outputs results to Ghidra console, just click the addresses to view them in
+  code browser
 * Changed some of the installation paths
 
 # FindCrypt - Ghidra Edition
