@@ -708,13 +708,6 @@ import ghidra.util.Msg;
 
 public class FindCrypt extends GhidraScript {
 
-	public static class GuiHandler {
-		
-		public static void ShowMessage(String _title, String _message, String _details, int _icon) {
-			MultiLineMessageDialog.showMessageDialog(null, _title, _message, _details, _icon);
-		}
-	}
-
 	public static class DatabaseManager {
 		// Structure of database file, for reference.
 		/********************************************************
@@ -737,19 +730,29 @@ public class FindCrypt extends GhidraScript {
 		private boolean   		 	_loaded = false;
 		private static final int 	_EXPECTED_MAGIC = 0xD3010401;
 		private short     		 	_totalEntries 	 = 0;
-		
+	
+		private String _dbPath;
+
 		private ArrayList<EntryInfo> _consts = new ArrayList<>();
+
 		
 		public int DbSize() {
 			return this._totalEntries;
 		}
+
+		public ArrayList<EntryInfo> getConsts() {
+			return _consts;
+		}
 		
-		public DatabaseManager(String _path) {
-			
+		public DatabaseManager(String path) {
+			_dbPath = path;
+		}
+
+		public void loadDb() throws Exception {
+
 			if (!this._loaded) {
 				
-				try {
-					DataInputStream _stream = new DataInputStream(new FileInputStream(_path));
+					DataInputStream _stream = new DataInputStream(new FileInputStream(_dbPath));
 					var _curMagic = _stream.readInt();
 					
 					if (_curMagic != _EXPECTED_MAGIC)
@@ -757,9 +760,7 @@ public class FindCrypt extends GhidraScript {
 					
 					this._totalEntries = _stream.readShort();
 					if (this._totalEntries == 0) {
-						GuiHandler.ShowMessage("FindCrypt - Warning", "Something unusual happened while loading the database.",
-								"The database contains no entries, while this is not error, the script will not scan anything", 2);
-						return; // No need to proceed at all.
+						throw new Exception("FindCrypt Error: Database had 0 entries");
 					}
 					
 					for (var i = 0; i < this._totalEntries; i++) {
@@ -801,69 +802,42 @@ public class FindCrypt extends GhidraScript {
 					_stream.close();
 					this._loaded = true;
 					
-				} catch (Exception e) {
-					GuiHandler.ShowMessage("FindCrypt - Error" , "An error happened while loading the database.", e.getMessage(), 0);
-				}
 				
 			}
 			
 		}
 	}
 
-	public static class WorksetManager {
-		
-		private static final String __FCDATA_DIR = System.getProperty("user.home") + File.separator + "ghidra_scripts" + File.separator;
-		
-		private static DatabaseManager _dbHandler;
-		
-		public static boolean Initialize() {
-			_dbHandler = new DatabaseManager(__FCDATA_DIR + "database.d3v");
-			
-			if (_dbHandler != null ) {
-				return true;
-			}
-			
-			return false;
-		}
-		
-		public static int GetDatabaseSize() {
-			return _dbHandler.DbSize();
-		}
-		
-		public static ArrayList<DatabaseManager.EntryInfo> GetDB() {
-			return _dbHandler._consts;
-		}
-	}
-	
 	@Override
 	protected void run() throws Exception {
 		
-		System.out.println("FindCrypt - Ghidra Edition by d3vil401 (https://d3vsite.org)\n" +
-						   "Original idea by Ilfak Guilfanov (http://hexblog.com)" +
-						   "\n");
+		println("FindCrypt - Ghidra Edition by d3vil401 (https://d3vsite.org)\n" +
+		        "Original idea by Ilfak Guilfanov (http://hexblog.com)\n");
 		
 		if (isRunningHeadless()) {
 			// Nothing to do I guess?
 		}
 		
 		if (currentProgram == null) {
-			Msg.info(this, "No program loaded, aborting.");
+			println("No program loaded, aborting.");
 			return;
 		}
 		
-		WorksetManager.Initialize();
+		String scriptDir = System.getProperty("user.home") + File.separator + "ghidra_scripts" + File.separator;
+		DatabaseManager dbm = new DatabaseManager(scriptDir + "database.d3v");
+		dbm.loadDb();
 
-		System.out.println("Loaded " + WorksetManager.GetDatabaseSize() + " signatures.");
+		println("Loaded " + dbm.DbSize() + " signatures.");
 		
 		var _ctr = 0;
 		var _formatted = "";
 		
-		for (var alg: WorksetManager.GetDB()) {
+		for (var alg: dbm.getConsts() ) {
 			monitor.checkCanceled();
 			
 			var _found = currentProgram.getMemory().findBytes(currentProgram.getMinAddress(), alg._buffer, null, true, monitor);
 			if (_found != null) {
-				System.out.println("Found " + alg._name + ": 0x" + String.format("%08X", _found.getOffset()));
+				println("Found " + alg._name + ": 0x" + String.format("%08X", _found.getOffset()));
 				// I added a counter, in case we have duplicate patterns.
 				
 				_formatted += String.format("%s -> 0x%08X\n", alg._name, _found.getOffset());
@@ -873,8 +847,9 @@ public class FindCrypt extends GhidraScript {
 		
 		// Only show results if something has been found.
 		if (_ctr > 1)
-			GuiHandler.ShowMessage("FindCrypt Ghidra", "A total of " + _ctr + " signatures have been found.", _formatted, 1);
-		
+		{
+			println("A total of " + _ctr + " signatures have been found.");
+		}
 		
 		_formatted = "";
 	}
